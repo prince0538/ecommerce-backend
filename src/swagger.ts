@@ -11,6 +11,10 @@ export const swaggerSpec = swaggerJSDoc({
         },
         servers: [
             {
+                url: 'https://ecommerce-backend-dgqt.onrender.com',
+                description: 'Production Server'
+            },
+            {
                 url: 'http://localhost:5001',
                 description: 'Development Server'
             }
