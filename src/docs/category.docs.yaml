@@ -1,0 +1,86 @@
+paths:
+  /api/v1/category:
+    get:
+      summary: Get all categories
+      tags: [category]
+      responses:
+        '200':
+          description: Categories retrieved successfully
+    post:
+      summary: Create a new category
+      tags: [category]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: Electronics
+      responses:
+        '201':
+          description: Category created successfully
+
+  /api/v1/category/{id}:
+    get:
+      summary: Get category by ID
+      tags: [category]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 8dbc486d-663f-4515-8314-4553856238ec
+      responses:
+        '200':
+          description: Category retrieved successfully
+    put:
+      summary: Update category by ID
+      tags: [category]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 8dbc486d-663f-4515-8314-4553856238ec
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Updated Electronics
+      responses:
+        '200':
+          description: Category updated successfully
+    delete:
+      summary: Delete category by ID
+      tags: [category]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 8dbc486d-663f-4515-8314-4553856238ec
+      responses:
+        '200':
+          description: Category deleted successfully

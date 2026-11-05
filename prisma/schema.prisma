@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  cart      Cart?
+  orders    Order[]
+  isVerified  Boolean   @default(false)
+  otpHash     String?
+  otpExpires  DateTime?
+  otpAttempts Int       @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  products      Product[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Product {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  price        Int
+  stock        Int      @default(0)
+  imageUrl     String
+  categoryId   String
+  category     Category @relation(fields: [categoryId], references:[id])
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id            String  @id @default(uuid())
+  cartId        String
+  productId     String
+  quantity      Int     @default(1)
+  cart          Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product       Product @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+}
+
+model Order {
+  id         String      @id @default(uuid())
+  userId     String
+  status     OrderStatus @default(PENDING)
+  total      Int
+  user       User        @relation(fields: [userId], references: [id])
+  items      OrderItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model OrderItem {
+  id             String  @id @default(uuid())
+  orderId        String
+  productId      String
+  quantity       Int
+  price          Int
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product @relation(fields: [productId], references: [id])
+}

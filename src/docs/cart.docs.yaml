@@ -1,0 +1,79 @@
+paths:
+  /api/v1/cart/items:
+    post:
+      summary: User add item to cart
+      tags: [cart]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - quantity
+              properties:
+                productId:
+                  type: string
+                  format: uuid
+                  example: 8dbc486d-663f-4515-8314-4553856238ec
+                quantity:
+                  type: integer
+                  example: 2
+      responses:
+        '201':
+          description: User added item to cart successfully
+  /api/v1/cart/:
+    get:
+      summary: Get cart
+      tags: [cart]
+      responses:
+        '200':
+          description: Cart retrieved successfully
+    delete:
+      summary: Clear cart
+      tags: [cart]
+      responses:
+        '200':
+          description: Cart cleared successfully
+  /api/v1/cart/items/{productId}:
+    put:
+      summary: Update product in the cart
+      tags: [cart]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 8dbc486d-663f-4515-8314-4553856238ec
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: integer
+                  example: 2
+      responses:
+        '200':
+          description: Product in the cart updated successfully
+    delete:
+      summary: Remove product from the cart
+      tags: [cart]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 8dbc486d-663f-4515-8314-4553856238ec
+      responses:
+        '200':
+          description: Product removed from the cart successfully

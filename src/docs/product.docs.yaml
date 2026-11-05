@@ -1,0 +1,173 @@
+paths:
+  /api/v1/products:
+    get:
+      summary: Get all products
+      tags: [product]
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: Filter products by name (case-insensitive)
+          schema:
+            type: string
+            example: laptop
+        - name: categoryId
+          in: query
+          required: false
+          description: Filter products by category
+          schema:
+            type: string
+            format: uuid
+            example: 8dbc486d-663f-4515-8314-4553856238ec
+      responses:
+        '200':
+          description: Products retrieved successfully
+        '500':
+          description: Something went wrong
+    post:
+      summary: Create a new product (Admin only)
+      tags: [product]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - price
+                - categoryId
+                - imageUrl
+              properties:
+                name:
+                  type: string
+                  example: iPhone 15
+                description:
+                  type: string
+                  example: Latest Apple smartphone
+                price:
+                  type: integer
+                  description: Price as a whole number in kobo
+                  example: 150000
+                stock:
+                  type: integer
+                  minimum: 0
+                  example: 10
+                categoryId:
+                  type: string
+                  format: uuid
+                  example: 8dbc486d-663f-4515-8314-4553856238ec
+                imageUrl:
+                  type: string
+                  format: binary
+                  description: Product image file
+      responses:
+        '201':
+          description: Product created successfully
+        '400':
+          description: Validation error or image missing
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Admin only)
+        '404':
+          description: Category not found
+        '500':
+          description: Something went wrong
+
+  /api/v1/products/{id}:
+    get:
+      summary: Get product by ID
+      tags: [product]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 8dbc486d-663f-4515-8314-4553856238ec
+      responses:
+        '200':
+          description: Product retrieved successfully
+        '404':
+          description: Product not found
+        '500':
+          description: Something went wrong
+    put:
+      summary: Update product by ID (Admin only)
+      tags: [product]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 8dbc486d-663f-4515-8314-4553856238ec
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: iPhone 15 Pro
+                description:
+                  type: string
+                  example: Updated description
+                price:
+                  type: integer
+                  description: Price as a whole number in kobo
+                  example: 180000
+                stock:
+                  type: integer
+                  minimum: 0
+                  example: 20
+                categoryId:
+                  type: string
+                  format: uuid
+                  example: 8dbc486d-663f-4515-8314-4553856238ec
+      responses:
+        '200':
+          description: Product updated successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Admin only)
+        '404':
+          description: Product or category not found
+        '500':
+          description: Something went wrong
+    delete:
+      summary: Delete product by ID (Admin only)
+      tags: [product]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 8dbc486d-663f-4515-8314-4553856238ec
+      responses:
+        '200':
+          description: Product deleted successfully
+        '400':
+          description: Cannot delete a product that has been ordered
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Admin only)
+        '404':
+          description: Product not found
+        '500':
+          description: Something went wrong

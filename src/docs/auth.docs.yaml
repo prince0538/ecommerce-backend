@@ -1,0 +1,148 @@
+paths:
+  /api/v1/user/signUp:
+    post:
+      summary: Create User
+      tags: [user]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                  example: Enzo Fernandez
+                email:
+                  type: string
+                  example: enzofernandez@gmail.com
+                password:
+                  type: string
+                  example: Fernandez@12
+      responses:
+        '201':
+          description: 'User created successfully'
+
+  /api/v1/user/login:
+    post:
+      summary: User Log's In
+      tags: [user]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  example: enzofernandez@gmail.com
+                password:
+                  type: string
+                  example: Fernandez@12
+      responses:
+        '200':
+          description: 'Login successfully'
+
+  /api/v1/user/verify-otp:
+    post:
+      summary: Verify OTP
+      tags: [user]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                  example: enzofernandez@gmail.com
+                otp:
+                  type: string
+                  example: "123456"
+      responses:
+        '200':
+          description: 'OTP verified successfully'
+
+  /api/v1/user/resend-otp:
+    post:
+      summary: Resend OTP
+      tags: [user]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  example: enzofernandez@gmail.com
+      responses:
+        '200':
+          description: 'OTP resent successfully'
+
+  /api/v1/user/profile:
+    get:
+      summary: Get User Profile
+      tags: [user]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 'User profile retrieved successfully'
+    patch:
+      summary: Update User Profile
+      tags: [user]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Enzo Fernandez
+                email:
+                  type: string
+                  example: enzofernandez@gmail.com
+                password:
+                  type: string
+                  example: Fernandez@12
+      responses:
+        '200':
+          description: 'User profile updated successfully'
+    delete:
+      summary: Delete User Profile
+      tags: [user]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 'User profile deleted successfully'
+
+  /api/v1/user/profiles:
+    get:
+      summary: Get All User Profiles
+      tags: [user]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 'All user profiles retrieved successfully'
