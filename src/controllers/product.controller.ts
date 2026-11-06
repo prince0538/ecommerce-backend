@@ -58,7 +58,7 @@ export const createProduct = async (req: Request, res: Response) => {
         res.status(201).json({
             message: 'Product created successfully',
             data: product
-        }); 
+        });
 
     } catch (error) {
         console.error(error);

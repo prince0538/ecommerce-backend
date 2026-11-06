@@ -107,12 +107,12 @@ export const updateItem = async (req: Request, res: Response) => {
         const { quantity } = req.body;
 
         const cart = await prisma.cart.findUnique({
-             where: { userId } 
+            where: { userId }
         });
 
         if (!cart) {
-            return res.status(404).json({ 
-                error: 'Item is not in your cart' 
+            return res.status(404).json({
+                error: 'Item is not in your cart'
             });
         }
 
@@ -121,13 +121,13 @@ export const updateItem = async (req: Request, res: Response) => {
             include: { product: true },
         });
         if (!item) {
-            return res.status(404).json({ 
-                error: 'Item is not in your cart' 
+            return res.status(404).json({
+                error: 'Item is not in your cart'
             });
         }
         if (quantity > item.product.stock) {
-            return res.status(400).json({ 
-                error: `Only ${item.product.stock} in stock` 
+            return res.status(400).json({
+                error: `Only ${item.product.stock} in stock`
             });
         }
 
@@ -154,10 +154,12 @@ export const removeItem = async (req: Request, res: Response) => {
         const userId = (req as AuthRequest).user?.id as string;
         const productId = String(req.params.productId);
 
-        const cart = await prisma.cart.findUnique({ where: { userId } });
+        const cart = await prisma.cart.findUnique({
+            where: { userId }
+        });
         if (!cart) {
-            return res.status(404).json({ 
-                error: 'Item is not in your cart' 
+            return res.status(404).json({
+                error: 'Item is not in your cart'
             });
         }
 
@@ -165,13 +167,13 @@ export const removeItem = async (req: Request, res: Response) => {
             where: { cartId_productId: { cartId: cart.id, productId } },
         });
         if (!item) {
-            return res.status(404).json({ 
-                error: 'Item is not in your cart' 
+            return res.status(404).json({
+                error: 'Item is not in your cart'
             });
         }
 
-        await prisma.cartItem.delete({ 
-            where: { id: item.id } 
+        await prisma.cartItem.delete({
+            where: { id: item.id }
         });
         res.status(200).json({
             message: 'Item removed from cart successfully'
@@ -188,8 +190,8 @@ export const clearCart = async (req: Request, res: Response) => {
     try {
         const userId = (req as AuthRequest).user?.id as string;
 
-        await prisma.cartItem.deleteMany({ 
-            where: { cart: { userId } } 
+        await prisma.cartItem.deleteMany({
+            where: { cart: { userId } }
         });
         res.status(200).json({
             message: 'Cart cleared successfully'

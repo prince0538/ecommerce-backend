@@ -1,8 +1,7 @@
-import { Request ,Response } from 'express';
+import { Request, Response } from 'express';
 import prisma from '../prisma';
-import { error } from 'node:console';
 
-export const createCategory = async (req: Request, res:Response) => {
+export const createCategory = async (req: Request, res: Response) => {
     try {
         const { name } = req.body;
         if (!name) {
@@ -25,7 +24,7 @@ export const createCategory = async (req: Request, res:Response) => {
             data: { name: name.trim() },
         });
 
-        res. status(201).json({
+        res.status(201).json({
             message: 'Category created successfully',
             data: category
         })
@@ -39,10 +38,10 @@ export const createCategory = async (req: Request, res:Response) => {
 
 export const getCategories = async (_req: Request, res: Response) => {
     try {
-        const categories = await prisma.category.findMany({ 
-            orderBy: { name: 'asc' } 
+        const categories = await prisma.category.findMany({
+            orderBy: { name: 'asc' }
         });
-        
+
         res.status(200).json({
             message: 'Categories retrieved successfully',
             data: categories
@@ -149,8 +148,8 @@ export const deleteCategory = async (req: Request, res: Response) => {
         })
 
         res.status(200).json({
-             message: 'Category deleted successfully'
-         });
+            message: 'Category deleted successfully'
+        });
 
     } catch (error) {
         res.status(500).json({
