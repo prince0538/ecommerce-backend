@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { Prisma } from '@prisma/client'
 import prisma from '../prisma';
-import fs from 'fs/promises';
 import { uploadImage } from '../cloudinary';
 
 export const createProduct = async (req: Request, res: Response) => {
@@ -70,13 +69,18 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const getProducts = async (req: Request, res: Response) => {
     try {
-        const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+        const search =
+            typeof req.query.search === 'string' ? req.query.search.trim() : undefined;
         const categoryId =
             typeof req.query.categoryId === 'string' ? req.query.categoryId : undefined;
 
         const where: Prisma.ProductWhereInput = {
             ...(categoryId && { categoryId }),
-            ...(search && { name: { contains: search, mode: 'insensitive' } }),
+            ...(search && {
+                AND: search.split(/\s+/).map((word) => ({
+                    name: { contains: word, mode: 'insensitive' as const },
+                })),
+            }),
         };
 
         const products = await prisma.product.findMany({
@@ -91,6 +95,7 @@ export const getProducts = async (req: Request, res: Response) => {
         })
 
     } catch (error) {
+        console.error('getProducts failed:', error);
         res.status(500).json({
             error: 'Something went wrong'
         });

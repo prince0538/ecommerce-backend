@@ -1,20 +1,21 @@
 paths:
   /api/v1/product:
     get:
-      summary: Get all products
+      summary: Get all products (public, no login required)
+      description: Returns every product, newest first. Prices are whole numbers in kobo, so 2500000 means ₦25,000.
       tags: [product]
       parameters:
         - name: search
           in: query
           required: false
-          description: Filter products by name (case-insensitive)
+          description: Search text. Every word must appear in the product name, in any order, ignoring capital letters.
           schema:
             type: string
-            example: laptop
+            example: blue sneakers
         - name: categoryId
           in: query
           required: false
-          description: Filter products by category
+          description: Show only products in this category
           schema:
             type: string
             format: uuid
@@ -22,6 +23,52 @@ paths:
       responses:
         '200':
           description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Products retrieved successfully
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                          example: Classic Sneakers - Blue
+                        description:
+                          type: string
+                          example: Comfortable everyday sneakers (Blue)
+                        price:
+                          type: integer
+                          description: Price in kobo
+                          example: 2500000
+                        stock:
+                          type: integer
+                          example: 30
+                        imageUrl:
+                          type: string
+                          example: https://picsum.photos/seed/sneakers/600/600
+                        categoryId:
+                          type: string
+                          format: uuid
+                        category:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                              example: Shoes
+        '400':
+          description: Invalid query parameters
         '500':
           description: Something went wrong
     post:
@@ -67,19 +114,17 @@ paths:
         '201':
           description: Product created successfully
         '400':
-          description: Validation error or image missing
+          description: Validation error, image missing, or category does not exist
         '401':
           description: Unauthorized
         '403':
           description: Forbidden (Admin only)
-        '404':
-          description: Category not found
         '500':
           description: Something went wrong
 
-  /api/v1/products/{id}:
+  /api/v1/product/{id}:
     get:
-      summary: Get product by ID
+      summary: Get product by ID (public, no login required)
       tags: [product]
       parameters:
         - name: id
@@ -92,12 +137,15 @@ paths:
       responses:
         '200':
           description: Product retrieved successfully
+        '400':
+          description: Invalid product id
         '404':
           description: Product not found
         '500':
           description: Something went wrong
     put:
       summary: Update product by ID (Admin only)
+      description: Send only the fields you want to change. At least one field is required.
       tags: [product]
       security:
         - bearerAuth: []
@@ -137,12 +185,14 @@ paths:
       responses:
         '200':
           description: Product updated successfully
+        '400':
+          description: Validation error, invalid id, or category does not exist
         '401':
           description: Unauthorized
         '403':
           description: Forbidden (Admin only)
         '404':
-          description: Product or category not found
+          description: Product not found
         '500':
           description: Something went wrong
     delete:
@@ -159,15 +209,17 @@ paths:
             format: uuid
             example: 8dbc486d-663f-4515-8314-4553856238ec
       responses:
-        '200':
+        '204':
           description: Product deleted successfully
         '400':
-          description: Cannot delete a product that has been ordered
+          description: Invalid product id
         '401':
           description: Unauthorized
         '403':
           description: Forbidden (Admin only)
         '404':
           description: Product not found
+        '409':
+          description: Product is part of an order and cannot be deleted
         '500':
           description: Something went wrong
