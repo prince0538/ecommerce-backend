@@ -11,7 +11,6 @@ paths:
           description: Search text. Every word must appear in the product name, in any order, ignoring capital letters.
           schema:
             type: string
-            example: blue sneakers
         - name: categoryId
           in: query
           required: false
@@ -19,7 +18,6 @@ paths:
           schema:
             type: string
             format: uuid
-            example: 8dbc486d-663f-4515-8314-4553856238ec
       responses:
         '200':
           description: Products retrieved successfully
@@ -135,91 +133,3 @@ paths:
             format: uuid
             example: 8dbc486d-663f-4515-8314-4553856238ec
       responses:
-        '200':
-          description: Product retrieved successfully
-        '400':
-          description: Invalid product id
-        '404':
-          description: Product not found
-        '500':
-          description: Something went wrong
-    put:
-      summary: Update product by ID (Admin only)
-      description: Send only the fields you want to change. At least one field is required.
-      tags: [product]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-            example: 8dbc486d-663f-4515-8314-4553856238ec
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: iPhone 15 Pro
-                description:
-                  type: string
-                  example: Updated description
-                price:
-                  type: integer
-                  description: Price as a whole number in kobo
-                  example: 180000
-                stock:
-                  type: integer
-                  minimum: 0
-                  example: 20
-                categoryId:
-                  type: string
-                  format: uuid
-                  example: 8dbc486d-663f-4515-8314-4553856238ec
-      responses:
-        '200':
-          description: Product updated successfully
-        '400':
-          description: Validation error, invalid id, or category does not exist
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden (Admin only)
-        '404':
-          description: Product not found
-        '500':
-          description: Something went wrong
-    delete:
-      summary: Delete product by ID (Admin only)
-      tags: [product]
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-            example: 8dbc486d-663f-4515-8314-4553856238ec
-      responses:
-        '204':
-          description: Product deleted successfully
-        '400':
-          description: Invalid product id
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden (Admin only)
-        '404':
-          description: Product not found
-        '409':
-          description: Product is part of an order and cannot be deleted
-        '500':
-          description: Something went wrong
