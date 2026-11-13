@@ -10,12 +10,14 @@ import {
     deleteUserProfile,
 } from '../controllers/auth.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
+import { validate } from '../middleware/validate.middleware';
+import { signupSchema, loginSchema } from '../validators/schemas'
 
 const router = Router();
 
 
-router.post('/signUp', signUp);
-router.post('/login', login);
+router.post('/signUp', validate(signupSchema), signUp);
+router.post('/login', validate(loginSchema), login);
 router.post('/verify-otp', verifyOtp);
 router.post('/resend-otp', resendOtp);
 

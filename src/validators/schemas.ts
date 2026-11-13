@@ -68,5 +68,5 @@ export const updateCartItemSchema = Joi.object({
 
 
 export const orderStatusSchema = Joi.object({
-    status: Joi.string().valid('PAID', 'SHIPPED', 'DELIVERED').required(),
+    status: Joi.string().valid('PAID', 'SHIPPED', 'PENDING', 'CANCELLED', 'DELIVERED').required(),
 });
