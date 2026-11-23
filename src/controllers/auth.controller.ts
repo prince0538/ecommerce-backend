@@ -48,7 +48,7 @@ export const signUp = async (req: Request, res: Response) => {
                 role: user.role
             }
         })
-    } catch (error: any) {
+    } catch {
         res.status(500).json({
             error: 'Something went wrong'
         })
@@ -60,49 +60,80 @@ export const verifyOtp = async (req: Request, res: Response) => {
         const email = String(req.body.email ?? '').trim().toLowerCase();
         const otp = String(req.body.otp ?? '').trim();
 
-        if (!email || !otp) {
+        if (!otp) {
             return res.status(400).json({
-                error: 'email and otp are required'
+                error: 'otp is required'
             })
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email },
-            omit: { otpHash: false }
-        })
+        const now = new Date();
+
+        if (email) {
+            const user = await prisma.user.findUnique({
+                where: { email },
+                omit: { otpHash: false }
+            });
+
+            if (!user) {
+                return res.status(400).json({ error: 'Invalid or expired OTP' });
+            }
+
+            if (user.isVerified) {
+                return res.status(400).json({ error: 'Email is already verified' });
+            }
+
+            if (!user.otpHash || !user.otpExpires || user.otpExpires < now) {
+                return res.status(400).json({ error: 'OTP has expired. Request a new one.' });
+            }
+
+            if (user.otpAttempts >= 5) {
+                return res.status(429).json({ error: 'Too many wrong attempts. Request a new OTP.' });
+            }
+
+            const validOtp = await bcrypt.compare(otp, user.otpHash);
+            if (!validOtp) {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { otpAttempts: { increment: 1 } }
+                });
+                return res.status(400).json({ error: 'Invalid OTP' });
+            }
+
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    isVerified: true,
+                    otpHash: null,
+                    otpExpires: null,
+                    otpAttempts: 0
+                }
+            });
+
+            return res.status(200).json({ message: 'Email verified successfully' });
+        }
+
+
+        const users = await prisma.user.findMany({
+                where: {
+                    isVerified: false,
+                    otpHash: { not: null },
+                    otpExpires: { gt: now },
+                },
+                omit: { otpHash: false }
+            });
+
+        let user = null;
+        for (const candidate of users) {
+            if (!candidate.otpHash || candidate.otpAttempts >= 5) continue;
+            if (await bcrypt.compare(otp, candidate.otpHash)) {
+                user = candidate;
+                break;
+            }
+        }
 
         if (!user) {
             return res.status(400).json({
                 error: 'Invalid or expired OTP'
-            })
-        }
-
-        if (user.isVerified) {
-            return res.status(400).json({
-                error: 'Email is already verified'
-            })
-        }
-
-        if (!user.otpHash || !user.otpExpires || user.otpExpires < new Date()) {
-            return res.status(400).json({
-                error: 'OTP has expired. Request a new one.'
-            })
-        }
-
-        if (user.otpAttempts >= 5) {
-            return res.status(429).json({
-                error: 'Too many wrong attempts. Request a new OTP.'
-            })
-        }
-
-        const validOtp = await bcrypt.compare(otp, user.otpHash)
-        if (!validOtp) {
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { otpAttempts: { increment: 1 } }
-            })
-            return res.status(400).json({
-                error: 'Invalid OTP'
             })
         }
 
@@ -115,6 +146,8 @@ export const verifyOtp = async (req: Request, res: Response) => {
                 otpAttempts: 0
             }
         })
+
+
 
         res.status(200).json({
             message: 'Email verified successfully'
@@ -149,7 +182,7 @@ export const resendOtp = async (req: Request, res: Response) => {
 
         await prisma.user.update({
             where: { id: user.id },
-            data: { otpHash, otpExpires }
+            data: { otpHash, otpExpires, otpAttempts: 0 }
         })
 
         await sendOtpEmail(user.email, otp)
@@ -157,7 +190,7 @@ export const resendOtp = async (req: Request, res: Response) => {
         res.status(200).json({
             message: 'If the account exists, a new OTP has been sent'
         })
-    } catch (error: any) {
+    } catch {
         res.status(500).json({
             error: 'Something went wrong'
         })
@@ -186,8 +219,15 @@ export const login = async (req: Request, res: Response) => {
         }
 
         if (!user.isVerified) {
+            const { otp, otpHash, otpExpires } = await generateOtp();
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { otpHash, otpExpires, otpAttempts: 0 }
+            });
+            await sendOtpEmail(user.email, otp, user.name);
+
             return res.status(403).json({
-                error: 'Please verify your email first'
+                error: 'Please verify your email first. A new OTP has been sent.'
             })
         }
 

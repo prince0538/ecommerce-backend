@@ -18,7 +18,7 @@ const router = Router();
 
 router.post('/signUp', validate(signupSchema), signUp);
 router.post('/login', validate(loginSchema), login);
-router.post('/verify-otp', verifyOtp);
+router.post('/verify-otp', validate(verifyOtpSchema), verifyOtp);
 router.post('/resend-otp', resendOtp);
 
 

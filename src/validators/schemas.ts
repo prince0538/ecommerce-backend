@@ -17,7 +17,7 @@ export const signupSchema = Joi.object({
 });
 
 export const verifyOtpSchema = Joi.object({
-  email: Joi.string().trim().lowercase().email({ tlds: { allow: false } }).required(),
+  email: Joi.string().trim().lowercase().email({ tlds: { allow: false } }).optional(),
   otp: Joi.string().trim().length(6).pattern(/^\d+$/).required(),
 });
 
