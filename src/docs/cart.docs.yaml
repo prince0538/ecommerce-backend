@@ -1,8 +1,72 @@
 paths:
+  /api/v1/cart:
+    get:
+      summary: Get the logged-in user's cart
+      description: Creates an empty cart if the user does not have one yet. The total is in kobo.
+      tags: [cart]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Cart retrieved successfully' }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string, format: uuid }
+                      total: { type: integer, description: Cart total in kobo, example: 5000000 }
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: string, format: uuid }
+                            cartId: { type: string, format: uuid }
+                            productId: { type: string, format: uuid }
+                            quantity: { type: integer, example: 2 }
+                            product:
+                              type: object
+                              properties:
+                                id: { type: string, format: uuid }
+                                name: { type: string, example: 'Classic Sneakers' }
+                                price: { type: integer, description: Price in kobo, example: 2500000 }
+                                stock: { type: integer, example: 30 }
+                                imageUrl: { type: string, example: 'https://res.cloudinary.com/demo/image/upload/sneakers.jpg' }
+        '401':
+          description: Not logged in
+        '500':
+          description: Something went wrong
+    delete:
+      summary: Clear the cart
+      tags: [cart]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart cleared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Cart cleared successfully' }
+        '401':
+          description: Not logged in
+        '500':
+          description: Something went wrong
+
   /api/v1/cart/items:
     post:
-      summary: User add item to cart
+      summary: Add an item to the cart
+      description: If the product is already in the cart, the quantity is added to the existing one. The total cannot exceed the stock.
       tags: [cart]
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -16,30 +80,62 @@ paths:
                 productId:
                   type: string
                   format: uuid
-                  example: 8dbc486d-663f-4515-8314-4553856238ec
                 quantity:
                   type: integer
+                  minimum: 1
+                  maximum: 100
                   example: 2
       responses:
-        '201':
-          description: User added item to cart successfully
-  /api/v1/cart/:
-    get:
-      summary: Get cart
-      tags: [cart]
-      responses:
         '200':
-          description: Cart retrieved successfully
-    delete:
-      summary: Clear cart
-      tags: [cart]
-      responses:
-        '200':
-          description: Cart cleared successfully
+          description: Item added to cart successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Item added to cart successfully' }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string, format: uuid }
+                      cartId: { type: string, format: uuid }
+                      productId: { type: string, format: uuid }
+                      quantity: { type: integer, example: 2 }
+                      product:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          name: { type: string, example: 'Classic Sneakers' }
+                          price: { type: integer, example: 2500000 }
+                          stock: { type: integer, example: 30 }
+        '400':
+          description: Validation error, or the quantity exceeds the available stock
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string, example: 'Quantity exceeds available stock' }
+        '401':
+          description: Not logged in
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string, example: 'Product not found' }
+        '500':
+          description: Something went wrong
+
   /api/v1/cart/items/{productId}:
     put:
-      summary: Update product in the cart
+      summary: Change the quantity of a product in the cart
+      description: Sets the quantity. It does not add to the existing one.
       tags: [cart]
+      security:
+        - bearerAuth: []
       parameters:
         - name: productId
           in: path
@@ -47,7 +143,6 @@ paths:
           schema:
             type: string
             format: uuid
-            example: 8dbc486d-663f-4515-8314-4553856238ec
       requestBody:
         required: true
         content:
@@ -59,13 +154,57 @@ paths:
               properties:
                 quantity:
                   type: integer
-                  example: 2
+                  minimum: 1
+                  maximum: 100
+                  example: 3
       responses:
         '200':
-          description: Product in the cart updated successfully
+          description: Item updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Item updated successfully' }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string, format: uuid }
+                      cartId: { type: string, format: uuid }
+                      productId: { type: string, format: uuid }
+                      quantity: { type: integer, example: 3 }
+                      product:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          name: { type: string, example: 'Classic Sneakers' }
+                          price: { type: integer, example: 2500000 }
+                          stock: { type: integer, example: 30 }
+        '400':
+          description: Validation error, or the quantity exceeds the available stock
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string, example: 'Only 30 in stock' }
+        '401':
+          description: Not logged in
+        '404':
+          description: The item is not in your cart
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string, example: 'Item is not in your cart' }
+        '500':
+          description: Something went wrong
     delete:
-      summary: Remove product from the cart
+      summary: Remove a product from the cart
       tags: [cart]
+      security:
+        - bearerAuth: []
       parameters:
         - name: productId
           in: path
@@ -73,7 +212,20 @@ paths:
           schema:
             type: string
             format: uuid
-            example: 8dbc486d-663f-4515-8314-4553856238ec
       responses:
         '200':
-          description: Product removed from the cart successfully
+          description: Item removed from cart successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: 'Item removed from cart successfully' }
+        '400':
+          description: Invalid product id
+        '401':
+          description: Not logged in
+        '404':
+          description: The item is not in your cart
+        '500':
+          description: Something went wrong

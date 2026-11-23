@@ -30,6 +30,7 @@ export const getCart = async (req: Request, res: Response) => {
         })
 
     } catch (error) {
+        console.error('getCart failed:', error);
         res.status(500).json({
             error: 'Something went wrong'
         })
@@ -62,7 +63,7 @@ export const addItemToCart = async (req: Request, res: Response) => {
         }
 
         const existingCartItem = await prisma.cartItem.findFirst({
-            where: { cartId: cart!.id, productId }
+            where: { cartId: cart.id, productId }
         })
 
         const newQuantity = (existingCartItem?.quantity ?? 0) + quantity;
@@ -83,7 +84,7 @@ export const addItemToCart = async (req: Request, res: Response) => {
 
         } else {
             cartItem = await prisma.cartItem.create({
-                data: { cartId: cart!.id, productId, quantity },
+                data: { cartId: cart.id, productId, quantity },
                 include: { product: true }
             });
         }
@@ -94,6 +95,7 @@ export const addItemToCart = async (req: Request, res: Response) => {
         })
 
     } catch (error) {
+        console.error('addItemToCart failed:', error);
         res.status(500).json({
             error: 'Something went wrong'
         })
@@ -143,6 +145,7 @@ export const updateItem = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
+        console.error('updateItem failed:', error);
         res.status(500).json({
             error: 'Something went wrong',
         });
@@ -180,6 +183,7 @@ export const removeItem = async (req: Request, res: Response) => {
         });
 
     } catch (error) {
+        console.error('removeItem failed:', error);
         res.status(500).json({
             error: 'Something went wrong',
         });
@@ -197,6 +201,7 @@ export const clearCart = async (req: Request, res: Response) => {
             message: 'Cart cleared successfully'
         });
     } catch (error) {
+        console.error('clearCart failed:', error);
         res.status(500).json({
             error: 'Something went wrong',
         });

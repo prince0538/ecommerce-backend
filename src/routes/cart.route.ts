@@ -16,7 +16,7 @@ import {
 
 const router = Router();
 
-// router.use(authenticate);
+router.use(authenticate);
 
 router.get('/', getCart);
 router.post('/items', validate(addCartItemSchema), addItemToCart);
