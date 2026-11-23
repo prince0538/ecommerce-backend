@@ -26,7 +26,7 @@ router.put(
     validate(updateCartItemSchema),
     updateItem
 );
-router.delete('/item/:productId', validate(productIdParamSchema, 'params'), removeItem);
+router.delete('/items/:productId', validate(productIdParamSchema, 'params'), removeItem);
 router.delete('/', clearCart);
 
 export default router;
