@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
     signUp,
     login,
-    verifyOtp,
+    verifyUser,
     resendOtp,
     getUsersProfile,
     getUserProfile,
@@ -18,7 +18,7 @@ const router = Router();
 
 router.post('/signUp', validate(signupSchema), signUp);
 router.post('/login', validate(loginSchema), login);
-router.post('/verify-otp', verifyOtp);
+router.post('/verify-otp', verifyUser);
 router.post('/resend-otp', resendOtp);
 
 

@@ -55,72 +55,62 @@ export const signUp = async (req: Request, res: Response) => {
     }
 }
 
-export const verifyOtp = async (req: Request, res: Response) => {
+export const verifyUser = async (req: Request, res: Response) => {
     try {
-        const email = String(req.body.email ?? '').trim().toLowerCase();
-        const otp = String(req.body.otp ?? '').trim();
+        const { email, otp } = req.body;
 
-        const user = await prisma.user.findUnique({
-            where: { email },
+        const existingUser = await prisma.user.findUnique({
+            where: {
+                email: email.toLowerCase(),
+            },
             omit: { otpHash: false }
         });
 
-        if (!user) {
+        if (!existingUser) {
             return res.status(404).json({
-                error: 'User not found'
+                error: 'User not found',
             });
         }
 
-        if (!user.otpExpires || user.otpExpires.getTime() < Date.now()) {
+        if (!existingUser.otpHash || !existingUser.otpExpires) {
             return res.status(400).json({
-                error: 'OTP has expired'
+                error: 'No valid OTP found. Please request a new one.',
             });
         }
 
-        if (user.otpAttempts >= 5) {
-            return res.status(429).json({
-                error: 'Too many wrong attempts. Request a new OTP.'
-            });
-        }
-
-        if (!user.otpHash || !(await bcrypt.compare(otp, user.otpHash))) {
-            if (user.otpAttempts < 5) {
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: { otpAttempts: { increment: 1 } }
-                });
-            }
-
+        if (Date.now() > existingUser.otpExpires.getTime()) {
             return res.status(400).json({
-                error: 'OTP is invalid'
+                error: 'OTP has expired. Please request a new one.',
             });
         }
 
-        if (!user.isVerified) {
-            await prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    isVerified: true,
-                    otpHash: null,
-                    otpExpires: null,
-                    otpAttempts: 0
-                }
-            });
-
-            return res.status(200).json({
-                message: 'Email verified successfully!'
+        const validOtp = await bcrypt.compare(String(otp), existingUser.otpHash);
+        if (!validOtp) {
+            return res.status(400).json({
+                error: 'Invalid OTP',
             });
         }
+
+        await prisma.user.update({
+            where: {
+                id: existingUser.id,
+            },
+            data: {
+                isVerified: true,
+                otpHash: null,
+                otpExpires: null,
+                otpAttempts: 0,
+            },
+        });
 
         return res.status(200).json({
-            success: true,
-            message: 'Verified successfully!'
+            message: 'Email verified successfully',
         });
     } catch (error) {
-        console.error('verifyOtp failed:', error)
-        res.status(500).json({
-            error: 'Something went wrong'
-        })
+        console.error('Error verifying user:', error);
+        return res.status(500).json({
+            error: 'Something went wrong',
+        });
     }
 }
 
@@ -146,7 +136,7 @@ export const resendOtp = async (req: Request, res: Response) => {
 
         await prisma.user.update({
             where: { id: user.id },
-            data: { otpHash, otpExpires, otpAttempts: 0 }
+            data: { otpHash, otpExpires }
         })
 
         await sendOtpEmail(user.email, otp)
@@ -183,15 +173,8 @@ export const login = async (req: Request, res: Response) => {
         }
 
         if (!user.isVerified) {
-            const { otp, otpHash, otpExpires } = await generateOtp();
-            await prisma.user.update({
-                where: { id: user.id },
-                data: { otpHash, otpExpires, otpAttempts: 0 }
-            });
-            await sendOtpEmail(user.email, otp, user.name);
-
             return res.status(403).json({
-                error: 'Please verify your email first. A new OTP has been sent.'
+                error: 'Please verify your email first'
             })
         }
 
