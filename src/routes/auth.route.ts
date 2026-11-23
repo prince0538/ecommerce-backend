@@ -11,14 +11,14 @@ import {
 } from '../controllers/auth.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validate.middleware';
-import { signupSchema, loginSchema } from '../validators/schemas'
+import { signupSchema, loginSchema, verifyOtpSchema } from '../validators/schemas'
 
 const router = Router();
 
 
 router.post('/signUp', validate(signupSchema), signUp);
 router.post('/login', validate(loginSchema), login);
-router.post('/verify-otp', verifyOtp);
+router.post('/verify-otp', validate(verifyOtpSchema), verifyOtp);
 router.post('/resend-otp', resendOtp);
 
 
