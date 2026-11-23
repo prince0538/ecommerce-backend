@@ -60,45 +60,43 @@ export const verifyOtp = async (req: Request, res: Response) => {
         const email = String(req.body.email ?? '').trim().toLowerCase();
         const otp = String(req.body.otp ?? '').trim();
 
-        if (!otp) {
-            return res.status(400).json({
-                error: 'otp is required'
-            })
+        const user = await prisma.user.findUnique({
+            where: { email },
+            omit: { otpHash: false }
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                error: 'User not found'
+            });
         }
 
-        const now = new Date();
-
-        if (email) {
-            const user = await prisma.user.findUnique({
-                where: { email },
-                omit: { otpHash: false }
+        if (!user.otpExpires || user.otpExpires.getTime() < Date.now()) {
+            return res.status(400).json({
+                error: 'OTP has expired'
             });
+        }
 
-            if (!user) {
-                return res.status(400).json({ error: 'Invalid or expired OTP' });
-            }
+        if (user.otpAttempts >= 5) {
+            return res.status(429).json({
+                error: 'Too many wrong attempts. Request a new OTP.'
+            });
+        }
 
-            if (user.isVerified) {
-                return res.status(400).json({ error: 'Email is already verified' });
-            }
-
-            if (!user.otpHash || !user.otpExpires || user.otpExpires < now) {
-                return res.status(400).json({ error: 'OTP has expired. Request a new one.' });
-            }
-
-            if (user.otpAttempts >= 5) {
-                return res.status(429).json({ error: 'Too many wrong attempts. Request a new OTP.' });
-            }
-
-            const validOtp = await bcrypt.compare(otp, user.otpHash);
-            if (!validOtp) {
+        if (!user.otpHash || !(await bcrypt.compare(otp, user.otpHash))) {
+            if (user.otpAttempts < 5) {
                 await prisma.user.update({
                     where: { id: user.id },
                     data: { otpAttempts: { increment: 1 } }
                 });
-                return res.status(400).json({ error: 'Invalid OTP' });
             }
 
+            return res.status(400).json({
+                error: 'OTP is invalid'
+            });
+        }
+
+        if (!user.isVerified) {
             await prisma.user.update({
                 where: { id: user.id },
                 data: {
@@ -109,49 +107,15 @@ export const verifyOtp = async (req: Request, res: Response) => {
                 }
             });
 
-            return res.status(200).json({ message: 'Email verified successfully' });
-        }
-
-
-        const users = await prisma.user.findMany({
-                where: {
-                    isVerified: false,
-                    otpHash: { not: null },
-                    otpExpires: { gt: now },
-                },
-                omit: { otpHash: false }
+            return res.status(200).json({
+                message: 'Email verified successfully!'
             });
-
-        let user = null;
-        for (const candidate of users) {
-            if (!candidate.otpHash || candidate.otpAttempts >= 5) continue;
-            if (await bcrypt.compare(otp, candidate.otpHash)) {
-                user = candidate;
-                break;
-            }
         }
 
-        if (!user) {
-            return res.status(400).json({
-                error: 'Invalid or expired OTP'
-            })
-        }
-
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                isVerified: true,
-                otpHash: null,
-                otpExpires: null,
-                otpAttempts: 0
-            }
-        })
-
-
-
-        res.status(200).json({
-            message: 'Email verified successfully'
-        })
+        return res.status(200).json({
+            success: true,
+            message: 'Verified successfully!'
+        });
     } catch (error) {
         console.error('verifyOtp failed:', error)
         res.status(500).json({

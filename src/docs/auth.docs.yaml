@@ -62,12 +62,12 @@ paths:
             schema:
               type: object
               required:
+                - email
                 - otp
               properties:
                 email:
                   type: string
                   example: enzofernandez@gmail.com
-                  description: Optional for clients using the older request shape.
                 otp:
                   type: string
                   example: "123456"
