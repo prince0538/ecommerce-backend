@@ -167,7 +167,7 @@ export const login = async (req: Request, res: Response) => {
 
         const validPassword = user && (await bcrypt.compare(password, user.password));
         if (!validPassword) {
-            return res.status(401).json({
+            return res.status(404).json({
                 error: 'Invalid email or password'
             })
         }
@@ -281,6 +281,105 @@ export const deleteUserProfile = async (req: Request, res: Response) => {
     } catch (error: any) {
         res.status(500).json({
             error: error.message
+        })
+    }
+}
+
+export const forgotPassword = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+
+        const user = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() }
+        })
+
+        if (!user) {
+            return res.status(404).json({
+                error: 'User not found'
+            })
+        }
+
+        if (user.otpExpires && user.otpExpires.getTime() > Date.now()) {
+            return res.status(400).json({
+                error: 'OTP already sent. Please check your email.'
+            })
+        }
+
+        const { otp, otpHash, otpExpires } = await generateOtp()
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { otpHash, otpExpires, otpAttempts: 0 }
+        })
+
+        await sendOtpEmail(user.email, otp, user.name)
+
+        res.status(200).json({
+            message: 'OTP generated successfully'
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            error: error.message
+        })
+    }
+}
+
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const email = String(req.body.email).trim().toLowerCase();
+        const otp = String(req.body.otp).trim().padStart(6, '0');
+        const { newPassword } = req.body;
+
+        const user = await prisma.user.findUnique({
+            where: { email },
+            omit: { otpHash: false }
+        })
+
+        if (!user || !user.otpHash || !user.otpExpires || user.otpExpires < new Date()) {
+            return res.status(400).json({
+                error: 'Invalid or expired OTP'
+            })
+        }
+
+        if (user.otpAttempts >= 5) {
+            return res.status(429).json({
+                error: 'Too many wrong attempts. Request a new OTP.'
+            })
+        }
+
+        const validOtp = await bcrypt.compare(otp, user.otpHash)
+        if (!validOtp) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { otpAttempts: { increment: 1 } }
+            })
+            return res.status(400).json({
+                error: 'Invalid or expired OTP'
+            })
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                password: hashedPassword,
+                isVerified: true,
+                otpHash: null,
+                otpExpires: null,
+                otpAttempts: 0
+            }
+        })
+
+
+        res.status(200).json({
+            message: 'Password reset successfully. You can now log in.'
+        })
+
+
+    } catch (error) {
+        res.status(500).json({
+            error: 'Something went wrong'
         })
     }
 }

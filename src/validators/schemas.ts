@@ -70,3 +70,24 @@ export const updateCartItemSchema = Joi.object({
 export const orderStatusSchema = Joi.object({
     status: Joi.string().valid('PAID', 'SHIPPED', 'PENDING', 'CANCELLED', 'DELIVERED').required(),
 });
+
+export const referenceParamSchema = Joi.object({
+  reference: Joi.string().trim().max(120).required(),
+});
+
+export const resetPasswordSchema = Joi.object({
+  email: Joi.string().trim().lowercase().email({ tlds: { allow: false } }).required(),
+  otp: Joi.alternatives().try(Joi.string(), Joi.number()).required(),
+  newPassword: Joi.string()
+    .min(8)
+    .max(72)
+    .pattern(/^(?=.*[A-Za-z])(?=.*\d).+$/)
+    .required()
+    .messages({
+      'string.pattern.base': 'password must contain at least one letter and one number',
+    }),
+});
+
+export const paymentStatusSchema = Joi.object({
+  paymentStatus: Joi.string().valid('PAID', 'FAILED', 'REFUNDED').required(),
+});

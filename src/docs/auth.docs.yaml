@@ -1,7 +1,7 @@
 paths:
   /api/v1/user/signUp:
     post:
-      summary: Create User
+      summary: Create a user account
       tags: [user]
       requestBody:
         required: true
@@ -9,27 +9,24 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - name
-                - email
-                - password
+              required: [name, email, password]
               properties:
-                name:
-                  type: string
-                  example: Enzo Fernandez
-                email:
-                  type: string
-                  example: enzofernandez@gmail.com
-                password:
-                  type: string
-                  example: Fernandez@12
+                name: { type: string, example: Enzo Fernandez }
+                email: { type: string, format: email, example: enzofernandez@gmail.com }
+                password: { type: string, format: password, example: Fernandez@12 }
       responses:
         '201':
-          description: 'User created successfully'
+          description: User created successfully; an OTP is sent by email
+        '400':
+          description: Invalid or missing name, email, or password
+        '409':
+          description: Email already exists
+        '500':
+          description: Something went wrong
 
   /api/v1/user/login:
     post:
-      summary: User Log's In
+      summary: Log in a user
       tags: [user]
       requestBody:
         required: true
@@ -37,23 +34,25 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - email
-                - password
+              required: [email, password]
               properties:
-                email:
-                  type: string
-                  example: enzofernandez@gmail.com
-                password:
-                  type: string
-                  example: Fernandez@12
+                email: { type: string, format: email, example: enzofernandez@gmail.com }
+                password: { type: string, format: password, example: Fernandez@12 }
       responses:
         '200':
-          description: 'Login successfully'
+          description: Login successful; returns a JWT token and user data
+        '400':
+          description: Email and password are required or invalid
+        '403':
+          description: Email has not been verified
+        '404':
+          description: Invalid email or password
+        '500':
+          description: Something went wrong
 
   /api/v1/user/verify-otp:
     post:
-      summary: Verify OTP
+      summary: Verify a user's email with an OTP
       tags: [user]
       requestBody:
         required: true
@@ -61,23 +60,23 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - email
-                - otp
+              required: [email, otp]
               properties:
-                email:
-                  type: string
-                  example: enzofernandez@gmail.com
-                otp:
-                  type: string
-                  example: "123456"
+                email: { type: string, format: email, example: enzofernandez@gmail.com }
+                otp: { type: string, example: '123456' }
       responses:
         '200':
-          description: 'OTP verified successfully'
+          description: Email verified successfully
+        '400':
+          description: No valid OTP, expired OTP, or invalid OTP
+        '404':
+          description: User not found
+        '500':
+          description: Something went wrong
 
   /api/v1/user/resend-otp:
     post:
-      summary: Resend OTP
+      summary: Resend an account verification OTP
       tags: [user]
       requestBody:
         required: true
@@ -85,27 +84,82 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - email
+              required: [email]
               properties:
-                email:
-                  type: string
-                  example: enzofernandez@gmail.com
+                email: { type: string, format: email, example: enzofernandez@gmail.com }
       responses:
         '200':
-          description: 'OTP resent successfully'
+          description: If the account exists, a new OTP has been sent
+        '400':
+          description: Email is required
+        '500':
+          description: Something went wrong
+
+  /api/v1/user/forgot-password:
+    post:
+      summary: Request a password-reset OTP
+      tags: [user]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, example: enzofernandez@gmail.com }
+      responses:
+        '200':
+          description: OTP generated successfully
+        '400':
+          description: An OTP was already sent and has not expired
+        '404':
+          description: User not found
+        '500':
+          description: Something went wrong
+
+  /api/v1/user/reset-password:
+    post:
+      summary: Reset a user's password with an OTP
+      tags: [user]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp, newPassword]
+              properties:
+                email: { type: string, format: email, example: enzofernandez@gmail.com }
+                otp: { type: string, example: '123456' }
+                newPassword: { type: string, format: password, example: NewPassword12 }
+      responses:
+        '200':
+          description: Password reset successfully; the user can now log in
+        '400':
+          description: Invalid request or invalid or expired OTP
+        '429':
+          description: Too many wrong OTP attempts
+        '500':
+          description: Something went wrong
 
   /api/v1/user/profile:
     get:
-      summary: Get User Profile
+      summary: Get the authenticated user's profile
       tags: [user]
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 'User profile retrieved successfully'
+          description: User profile retrieved successfully
+        '401':
+          description: Unauthorized
+        '404':
+          description: User not found
+        '500':
+          description: Something went wrong
     patch:
-      summary: Update User Profile
+      summary: Update the authenticated user's profile
       tags: [user]
       security:
         - bearerAuth: []
@@ -116,33 +170,41 @@ paths:
             schema:
               type: object
               properties:
-                name:
-                  type: string
-                  example: Enzo Fernandez
-                email:
-                  type: string
-                  example: enzofernandez@gmail.com
-                password:
-                  type: string
-                  example: Fernandez@12
+                name: { type: string, example: Enzo Fernandez }
+                email: { type: string, format: email, example: enzofernandez@gmail.com }
+                password: { type: string, format: password, example: NewPassword12 }
       responses:
         '200':
-          description: 'User profile updated successfully'
+          description: User profile updated successfully
+        '401':
+          description: Unauthorized
+        '500':
+          description: Something went wrong
     delete:
-      summary: Delete User Profile
+      summary: Delete the authenticated user's profile
       tags: [user]
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 'User profile deleted successfully'
+          description: User profile deleted successfully
+        '401':
+          description: Unauthorized
+        '500':
+          description: Something went wrong
 
   /api/v1/user/profiles:
     get:
-      summary: Get All User Profiles
+      summary: Get all user profiles (Admin only)
       tags: [user]
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 'All user profiles retrieved successfully'
+          description: User profiles retrieved successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (Admin only)
+        '500':
+          description: Something went wrong

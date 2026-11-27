@@ -30,6 +30,20 @@ app.use('/api/v1/product', productRoute)
 app.use('/api/v1/cart', cartRoute)
 app.use('/api/v1/order', orderRoute)
 
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+  });
+});
+
+app.use((req, res, next) => {
+  res.status(404).json({
+    error: 'Route not found',
+  });
+});
+
+
 app.get('/health', (_req, res) => {
   res.json({ 
     status: 'ok' 
